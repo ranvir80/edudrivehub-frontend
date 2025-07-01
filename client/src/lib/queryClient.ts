@@ -8,7 +8,7 @@ async function throwIfResNotOk(res: Response) {
 }
 
 const API_BASE_URL = import.meta.env.PROD 
-  ? import.meta.env.VITE_API_URL || 'https://your-backend-url.onrender.com'
+  ? import.meta.env.VITE_API_URL || 'https://edudrivehub-backend.onrender.com'
   : 'http://localhost:5000';
 
 export async function apiRequest(
