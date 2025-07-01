@@ -1,23 +1,24 @@
 {
-  "name": "nakshatra-infotech-edudrivehub",
   "version": 2,
   "builds": [
     {
-      "src": "client/index.html",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist/public"
-      }
+      "src": "public/**/*",
+      "use": "@vercel/static"
     }
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "https://nakshatra-edudrivehub-backend.onrender.com/api/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/client/index.html"
+      "dest": "/public/$1"
     }
   ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/public",
-  "installCommand": "npm install",
-  "framework": "vite"
+  "functions": {
+    "public/script.js": {
+      "includeFiles": "public/**"
+    }
+  }
 }
