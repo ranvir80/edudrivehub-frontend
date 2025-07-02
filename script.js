@@ -3,8 +3,10 @@
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
     : window.location.hostname.includes('vercel.app') 
-        ? 'https://edudrivehub-backend-fl3g.onrender.com'  // Replace with your actual Render URL
-        : 'https://edudrivehub-backend-fl3g.onrender.com';
+        ? 'https://edudrivehub-backend.onrender.com'  // Replace with your actual Render URL
+        : window.location.hostname.includes('replit.dev')
+            ? window.location.origin.replace(':80', ':5000').replace(':443', ':5000')
+            : 'https://your-backend-url.onrender.com';
 
 // Global State
 let currentUser = null;
@@ -446,4 +448,3 @@ function showAlert(message, type) {
         setTimeout(() => document.body.removeChild(alert), 300);
     }, 3000);
 }
-
