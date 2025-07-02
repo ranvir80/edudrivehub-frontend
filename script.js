@@ -3,8 +3,8 @@
 const API_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
     : window.location.hostname.includes('vercel.app') 
-        ? 'https://edudrivehub-backend.onrender.com'  // Replace with your actual Render URL
-        : 'https://your-backend-url.onrender.com';
+        ? 'https://edudrivehub-backend-fl3g.onrender.com'  // Replace with your actual Render URL
+        : 'https://edudrivehub-backend-fl3g.onrender.com';
 
 // Global State
 let currentUser = null;
