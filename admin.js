@@ -1,248 +1,313 @@
-// Global variables
-let currentSubjects = [];
-let adminToken = localStorage.getItem('adminToken');
-let selectedFile = null;
+// Admin Panel JavaScript for EduDriveHub
 
-// API Configuration
-const API_BASE_URL = window.location.origin;
-    ? 'http://localhost:5000'
-    : 'https://edudrivehub-backend-att2.onrender.com';
-// Check authentication on page load
-if (!adminToken) {
-    window.location.href = '/';
-}
+const API_BASE_URL = 'https://your-backend-url.render.com'; // Replace with your Render backend URL
+let adminAuth = null;
 
-// Utility functions
-function showLoading() {
-    document.getElementById('loadingOverlay').classList.add('active');
-}
+// Initialize admin panel
+document.addEventListener('DOMContentLoaded', function() {
+    checkAdminAuth();
+    setupEventListeners();
+    loadStats();
+    loadRecentUploads();
+});
 
-function hideLoading() {
-    document.getElementById('loadingOverlay').classList.remove('active');
-}
-
-function showAlert(message, type = 'error') {
-    // Remove existing alerts
-    const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => alert.remove());
-
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert ${type}`;
-    alertDiv.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        ${message}
-    `;
-
-    const container = document.querySelector('.container');
-    container.insertBefore(alertDiv, container.firstChild);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
-
-// API calls
-async function apiCall(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const defaultOptions = {
-        headers: {},
-    };
-
-    // Add auth header if not uploading file
-    if (adminToken && !options.body instanceof FormData) {
-        defaultOptions.headers['Authorization'] = `Bearer ${adminToken}`;
-    }
-
-    // Add content type for JSON requests
-    if (options.body && typeof options.body === 'string') {
-        defaultOptions.headers['Content-Type'] = 'application/json';
-    }
-
-    const response = await fetch(url, { ...defaultOptions, ...options });
-    
-    if (response.status === 401) {
-        localStorage.removeItem('adminToken');
-        window.location.href = '/';
+// Check if admin is authenticated
+function checkAdminAuth() {
+    const auth = localStorage.getItem('adminAuth');
+    if (!auth) {
+        showNotification('Please login to access admin panel', 'error');
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 2000);
         return;
     }
-
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-}
-
-// Load subjects data
-async function loadSubjects() {
+    
     try {
-        const subjects = await apiCall('/api/subjects');
-        currentSubjects = subjects;
-        updateStats();
-        updateSubjectsList();
-        updateUploadSubjectOptions();
+        adminAuth = JSON.parse(auth);
+        document.getElementById('adminName').textContent = adminAuth.username || 'Admin';
     } catch (error) {
-        console.error('Failed to load subjects:', error);
-        showAlert('Failed to load subjects. Please try again.');
+        console.error('Invalid auth data:', error);
+        logout();
     }
 }
 
-// Update statistics
-function updateStats() {
-    const totalSubjects = currentSubjects.length;
-    const freeSubjects = currentSubjects.filter(s => s.type === 'free').length;
-    const premiumSubjects = currentSubjects.filter(s => s.type === 'premium').length;
-    const totalChapters = currentSubjects.reduce((total, subject) => total + (subject.chapters ? subject.chapters.length : 0), 0);
-
-    document.getElementById('totalSubjects').textContent = totalSubjects;
-    document.getElementById('freeSubjects').textContent = freeSubjects;
-    document.getElementById('premiumSubjects').textContent = premiumSubjects;
-    document.getElementById('totalChapters').textContent = totalChapters;
-}
-
-// Update subjects list
-function updateSubjectsList() {
-    const subjectsList = document.getElementById('subjectsList');
-    
-    if (currentSubjects.length === 0) {
-        subjectsList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-book"></i>
-                <p>No subjects available. Create your first subject to get started.</p>
-            </div>
-        `;
-        return;
+// Setup event listeners
+function setupEventListeners() {
+    // Upload form
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', handleFileUpload);
     }
 
-    subjectsList.innerHTML = currentSubjects.map(subject => {
-        const chaptersList = subject.chapters && subject.chapters.length > 0 
-            ? subject.chapters.map(chapter => `
-                <div class="chapter-item-admin">
-                    <div>
-                        <strong>${chapter.title}</strong>
-                        <small style="color: #718096; display: block;">
-                            Uploaded: ${new Date(chapter.uploadedAt).toLocaleDateString()}
-                        </small>
-                    </div>
-                    <button class="btn btn-danger btn-sm" onclick="deleteChapter(${chapter.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `).join('')
-            : '<p style="color: #718096; font-style: italic;">No chapters uploaded yet.</p>';
+    // File input change
+    const fileInput = document.getElementById('pdfFile');
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
 
-        return `
-            <div class="subject-item">
+    // Drag and drop
+    const uploadArea = document.getElementById('uploadArea');
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+    }
+}
+
+// Load dashboard statistics
+async function loadStats() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/stats`, {
+            headers: {
+                'Authorization': `Bearer ${adminAuth?.token || ''}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load stats');
+        }
+
+        const stats = await response.json();
+        displayStats(stats);
+    } catch (error) {
+        console.error('Error loading stats:', error);
+        displayStats({
+            totalSubjects: 0,
+            totalPDFs: 0,
+            storageUsed: '0 MB',
+            lastUpload: 'Never'
+        });
+    }
+}
+
+// Display statistics
+function displayStats(stats) {
+    const statsGrid = document.getElementById('stats-grid');
+    statsGrid.innerHTML = `
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
                 <div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <h4 style="margin: 0;">${subject.name}</h4>
-                        <span class="badge ${subject.type}">
-                            <i class="fas fa-${subject.type === 'free' ? 'unlock' : 'crown'}"></i>
-                            ${subject.type === 'free' ? 'Free' : 'Premium'}
-                        </span>
-                    </div>
-                    <p style="color: #718096; margin: 0; font-size: 0.875rem;">
-                        ${subject.description || 'No description available'}
-                    </p>
-                    <p style="color: #718096; margin: 0.25rem 0 0; font-size: 0.75rem;">
-                        ${subject.chapters ? subject.chapters.length : 0} chapters
-                    </p>
+                    <p class="text-sm text-gray-500">Total Subjects</p>
+                    <p class="text-2xl font-bold text-gray-900">${stats.totalSubjects || 0}</p>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-primary btn-sm" onclick="editSubject(${subject.id})">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteSubject(${subject.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <div class="stat-icon bg-blue-100">
+                    <i class="fas fa-book text-blue-600"></i>
                 </div>
             </div>
-            ${subject.chapters && subject.chapters.length > 0 ? `
-                <div class="chapters-list">
-                    ${chaptersList}
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Total PDFs</p>
+                    <p class="text-2xl font-bold text-gray-900">${stats.totalPDFs || 0}</p>
                 </div>
-            ` : ''}
-        `;
-    }).join('');
+                <div class="stat-icon bg-green-100">
+                    <i class="fas fa-file-pdf text-green-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Storage Used</p>
+                    <p class="text-2xl font-bold text-gray-900">${stats.storageUsed || '0 MB'}</p>
+                </div>
+                <div class="stat-icon bg-orange-100">
+                    <i class="fas fa-cloud text-orange-600"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Last Upload</p>
+                    <p class="text-2xl font-bold text-gray-900">${stats.lastUpload || 'Never'}</p>
+                </div>
+                <div class="stat-icon bg-purple-100">
+                    <i class="fas fa-clock text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
-// Update upload subject options
-function updateUploadSubjectOptions() {
-    const select = document.getElementById('uploadSubject');
-    select.innerHTML = '<option value="">Choose a subject...</option>';
-    
-    currentSubjects.forEach(subject => {
-        const option = document.createElement('option');
-        option.value = subject.id;
-        option.textContent = subject.name;
-        select.appendChild(option);
-    });
-}
-
-// Tab management
-function showTab(tabName) {
-    // Update tab buttons
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    document.querySelector(`[onclick="showTab('${tabName}')"]`).classList.add('active');
-
-    // Update tab content
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    document.getElementById(`${tabName}-tab`).classList.add('active');
-}
-
-// Create subject
-async function createSubject(formData) {
-    try {
-        showLoading();
-        await apiCall('/api/admin/subjects', {
-            method: 'POST',
-            body: JSON.stringify(formData),
-        });
-
-        showAlert('Subject created successfully!', 'success');
-        closeModal('addSubjectModal');
-        document.getElementById('addSubjectForm').reset();
-        loadSubjects();
-    } catch (error) {
-        showAlert(error.message || 'Failed to create subject.');
-    } finally {
-        hideLoading();
+// Handle file selection
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        validateAndDisplayFile(file);
     }
 }
 
-// Delete subject
-async function deleteSubject(subjectId) {
-    if (!confirm('Are you sure you want to delete this subject? This will also delete all chapters.')) {
+// Validate and display selected file
+function validateAndDisplayFile(file) {
+    const selectedFileEl = document.getElementById('selectedFile');
+    
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+        showNotification('Only PDF files are allowed', 'error');
+        return false;
+    }
+    
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+        showNotification('File size must be less than 10MB', 'error');
+        return false;
+    }
+    
+    // Display selected file
+    selectedFileEl.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+    selectedFileEl.classList.remove('hidden');
+    
+    return true;
+}
+
+// Drag and drop handlers
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('dragover');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const file = files[0];
+        if (validateAndDisplayFile(file)) {
+            document.getElementById('pdfFile').files = files;
+        }
+    }
+}
+
+// Handle file upload
+async function handleFileUpload(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const formData = new FormData();
+    
+    // Get form values
+    const subjectCode = document.getElementById('subjectCode').value;
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    const chapterNumber = document.getElementById('chapterNumber').value;
+    const file = document.getElementById('pdfFile').files[0];
+    
+    // Validate required fields
+    if (!subjectCode || !title || !chapterNumber || !file) {
+        showNotification('Please fill in all required fields', 'error');
         return;
     }
-
+    
+    // Append form data
+    formData.append('file', file);
+    formData.append('subjectCode', subjectCode);
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('chapterNumber', chapterNumber);
+    
+    const uploadBtn = document.getElementById('uploadBtn');
+    setButtonLoading(uploadBtn, true);
+    
     try {
-        showLoading();
-        await apiCall(`/api/admin/subjects/${subjectId}`, {
-            method: 'DELETE',
+        const response = await fetch(`${API_BASE_URL}/api/admin/upload`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${adminAuth?.token || ''}`
+            },
+            body: formData
         });
-
-        showAlert('Subject deleted successfully!', 'success');
-        loadSubjects();
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Upload failed');
+        }
+        
+        showNotification('Chapter uploaded successfully!', 'success');
+        
+        // Reset form
+        form.reset();
+        document.getElementById('selectedFile').classList.add('hidden');
+        
+        // Reload stats and recent uploads
+        loadStats();
+        loadRecentUploads();
+        
     } catch (error) {
-        showAlert(error.message || 'Failed to delete subject.');
+        console.error('Upload error:', error);
+        showNotification(error.message || 'Upload failed', 'error');
     } finally {
-        hideLoading();
+        setButtonLoading(uploadBtn, false);
     }
+}
+
+// Load recent uploads
+async function loadRecentUploads() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/recent-uploads`, {
+            headers: {
+                'Authorization': `Bearer ${adminAuth?.token || ''}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to load recent uploads');
+        }
+        
+        const uploads = await response.json();
+        displayRecentUploads(uploads);
+    } catch (error) {
+        console.error('Error loading recent uploads:', error);
+        displayRecentUploads([]);
+    }
+}
+
+// Display recent uploads
+function displayRecentUploads(uploads) {
+    const container = document.getElementById('recentUploads');
+    
+    if (!uploads || uploads.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8">
+                <i class="fas fa-upload text-4xl text-gray-300 mb-4"></i>
+                <p class="text-gray-500">No recent uploads</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = uploads.map(upload => `
+        <div class="chapter-item">
+            <div class="flex items-center">
+                <div class="chapter-icon">
+                    <i class="fas fa-file-pdf text-blue-600"></i>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-gray-900">${upload.title}</h4>
+                    <p class="text-sm text-gray-500">${upload.subjectName} - Chapter ${upload.chapterNumber}</p>
+                    <p class="text-xs text-gray-400">${formatFileSize(upload.fileSize)} • ${formatDate(upload.createdAt)}</p>
+                </div>
+            </div>
+            <div class="chapter-actions">
+                <button onclick="deleteChapter(${upload.id})" class="text-red-600 hover:text-red-800">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `).join('');
 }
 
 // Delete chapter
@@ -250,171 +315,102 @@ async function deleteChapter(chapterId) {
     if (!confirm('Are you sure you want to delete this chapter?')) {
         return;
     }
-
-    try {
-        showLoading();
-        await apiCall(`/api/admin/chapters/${chapterId}`, {
-            method: 'DELETE',
-        });
-
-        showAlert('Chapter deleted successfully!', 'success');
-        loadSubjects();
-    } catch (error) {
-        showAlert(error.message || 'Failed to delete chapter.');
-    } finally {
-        hideLoading();
-    }
-}
-
-// Upload chapter
-async function uploadChapter(formData) {
-    try {
-        showLoading();
-        
-        // First upload file to get URL (in real app, this would be Cloudinary)
-        const fileUrl = `https://example.com/pdfs/${Date.now()}-${selectedFile.name}`;
-        
-        const chapterData = {
-            subjectId: parseInt(formData.get('subjectId')),
-            title: formData.get('title'),
-            pdfUrl: fileUrl,
-            encrypted: false
-        };
-
-        await apiCall('/api/admin/chapters', {
-            method: 'POST',
-            body: JSON.stringify(chapterData),
-        });
-
-        showAlert('Chapter uploaded successfully!', 'success');
-        document.getElementById('uploadForm').reset();
-        clearFile();
-        loadSubjects();
-    } catch (error) {
-        showAlert(error.message || 'Failed to upload chapter.');
-    } finally {
-        hideLoading();
-    }
-}
-
-// File handling
-function clearFile() {
-    selectedFile = null;
-    document.getElementById('pdfFile').value = '';
-    document.getElementById('fileInfo').style.display = 'none';
-    document.getElementById('uploadArea').style.borderColor = '#e2e8f0';
-    document.getElementById('uploadArea').style.backgroundColor = '';
-}
-
-function handleFileSelect(file) {
-    if (file && file.type === 'application/pdf') {
-        selectedFile = file;
-        document.getElementById('fileName').textContent = file.name;
-        document.getElementById('fileInfo').style.display = 'block';
-        document.getElementById('uploadArea').style.borderColor = '#38a169';
-        document.getElementById('uploadArea').style.backgroundColor = '#c6f6d5';
-    } else {
-        showAlert('Please select a valid PDF file.');
-        clearFile();
-    }
-}
-
-// Logout
-function logout() {
-    localStorage.removeItem('adminToken');
-    window.location.href = '/';
-}
-
-// Edit subject (placeholder)
-function editSubject(subjectId) {
-    showAlert('Edit functionality will be implemented in the next version.');
-}
-
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Load initial data
-    loadSubjects();
-
-    // Add subject form
-    document.getElementById('addSubjectForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData.entries());
-        createSubject(data);
-    });
-
-    // Upload form
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (!selectedFile) {
-            showAlert('Please select a PDF file.');
-            return;
-        }
-        const formData = new FormData(this);
-        uploadChapter(formData);
-    });
-
-    // Subject type change handler
-    document.getElementById('subjectType').addEventListener('change', function() {
-        const passwordGroup = document.getElementById('passwordGroup');
-        if (this.value === 'premium') {
-            passwordGroup.style.display = 'block';
-            document.getElementById('subjectPassword').required = true;
-        } else {
-            passwordGroup.style.display = 'none';
-            document.getElementById('subjectPassword').required = false;
-        }
-    });
-
-    // File input handler
-    document.getElementById('pdfFile').addEventListener('change', function(e) {
-        if (e.target.files.length > 0) {
-            handleFileSelect(e.target.files[0]);
-        }
-    });
-
-    // Upload area drag and drop
-    const uploadArea = document.getElementById('uploadArea');
     
-    uploadArea.addEventListener('dragover', function(e) {
-        e.preventDefault();
-        this.classList.add('dragover');
-    });
-
-    uploadArea.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        this.classList.remove('dragover');
-    });
-
-    uploadArea.addEventListener('drop', function(e) {
-        e.preventDefault();
-        this.classList.remove('dragover');
-        
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileSelect(files[0]);
-        }
-    });
-
-    uploadArea.addEventListener('click', function() {
-        document.getElementById('pdfFile').click();
-    });
-
-    // Close modals when clicking outside
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.classList.remove('active');
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/chapters/${chapterId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${adminAuth?.token || ''}`,
+                'Content-Type': 'application/json'
             }
         });
-    });
-});
+        
+        if (!response.ok) {
+            throw new Error('Failed to delete chapter');
+        }
+        
+        showNotification('Chapter deleted successfully', 'success');
+        loadStats();
+        loadRecentUploads();
+        
+    } catch (error) {
+        console.error('Delete error:', error);
+        showNotification('Failed to delete chapter', 'error');
+    }
+}
 
-// Global functions for HTML onclick handlers
-window.showTab = showTab;
-window.closeModal = closeModal;
-window.deleteSubject = deleteSubject;
-window.deleteChapter = deleteChapter;
-window.editSubject = editSubject;
-window.clearFile = clearFile;
-window.logout = logout;
+// Utility functions
+function formatFileSize(bytes) {
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return '1 day ago';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+}
+
+function setButtonLoading(button, isLoading) {
+    const textSpan = button.querySelector('.upload-text');
+    const spinnerSpan = button.querySelector('.upload-spinner');
+    
+    if (isLoading) {
+        button.disabled = true;
+        if (textSpan) textSpan.classList.add('hidden');
+        if (spinnerSpan) spinnerSpan.classList.remove('hidden');
+    } else {
+        button.disabled = false;
+        if (textSpan) textSpan.classList.remove('hidden');
+        if (spinnerSpan) spinnerSpan.classList.add('hidden');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existing = document.querySelectorAll('.notification');
+    existing.forEach(el => el.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${getNotificationIcon(type)} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success':
+            return 'fa-check-circle';
+        case 'error':
+            return 'fa-exclamation-circle';
+        case 'info':
+        default:
+            return 'fa-info-circle';
+    }
+}
+
+// Logout function
+function logout() {
+    localStorage.removeItem('adminAuth');
+    showNotification('Logged out successfully', 'success');
+    setTimeout(() => {
+        window.location.href = 'index.html';
+    }, 1500);
+}

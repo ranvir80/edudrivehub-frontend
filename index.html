@@ -3,168 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduDriveHub - Educational Study Materials</title>
-    <meta name="description" content="Access your educational study materials with organized chapters and secure content delivery.">
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>EduDriveHub - Study Material Vault</title>
+    <meta name="description" content="Access organized PDFs chapter-wise for your courses. Secure storage with premium and free subject access.">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="EduDriveHub - Study Material Vault">
+    <meta property="og:description" content="Access organized PDFs chapter-wise for your courses">
+    <meta property="og:type" content="website">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="nav-brand">
-                <i class="fas fa-graduation-cap"></i>
-                <h1>EduDriveHub</h1>
-            </div>
-            <div class="nav-actions">
-                <button id="adminLoginBtn" class="btn btn-primary">
-                    <i class="fas fa-shield-alt"></i>
-                    Admin Login
-                </button>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-blue-600">
+                        <i class="fas fa-graduation-cap mr-2"></i>
+                        EduDriveHub
+                    </h1>
+                    <nav class="hidden md:ml-8 md:flex md:space-x-8">
+                        <a href="#subjects" class="text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium">Subjects</a>
+                        <a href="#about" class="text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">About</a>
+                        <a href="#contact" class="text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Contact</a>
+                    </nav>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="openAdminModal()" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-user-shield mr-2"></i>Admin Login
+                    </button>
+                </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main">
-        <div class="container">
-            <!-- Hero Section -->
-            <section class="hero">
-                <h2>Welcome to EduDriveHub</h2>
-                <p>Your comprehensive study material platform with organized chapters and easy access to educational content.</p>
-            </section>
-
-            <!-- Subjects Section -->
-            <section class="subjects">
-                <h3>Available Subjects</h3>
-                <div class="subjects-grid" id="subjectsGrid">
-                    <!-- MS-CIT Subject Card -->
-                    <div class="subject-card free" data-subject="ms-cit">
-                        <div class="subject-header">
-                            <div class="subject-icon free">
-                                <i class="fas fa-computer"></i>
-                            </div>
-                            <div class="subject-info">
-                                <h4>MS-CIT</h4>
-                                <span class="badge free">
-                                    <i class="fas fa-unlock"></i>
-                                    Free
-                                </span>
-                            </div>
-                        </div>
-                        <p class="subject-description">Microsoft Certificate in Information Technology - Basic computer skills and digital literacy.</p>
-                        <div class="subject-footer">
-                            <span class="chapter-count">0 Chapters</span>
-                            <button class="btn btn-success" onclick="viewSubject('ms-cit')">
-                                View Content
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- KLiC Hardware Subject Card -->
-                    <div class="subject-card premium" data-subject="klic-hardware">
-                        <div class="subject-header">
-                            <div class="subject-icon premium">
-                                <i class="fas fa-microchip"></i>
-                            </div>
-                            <div class="subject-info">
-                                <h4>KLiC Hardware</h4>
-                                <span class="badge premium">
-                                    <i class="fas fa-crown"></i>
-                                    Premium
-                                </span>
-                            </div>
-                        </div>
-                        <p class="subject-description">Kerala Learning Initiative on Computers - Advanced hardware concepts and troubleshooting.</p>
-                        <div class="subject-footer">
-                            <span class="chapter-count">0 Chapters</span>
-                            <button class="btn btn-premium" onclick="requestAccess('klic-hardware')">
-                                Access Required
-                            </button>
-                        </div>
-                    </div>
+    <!-- Hero Section -->
+    <section class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold mb-6">Your Study Material Vault</h2>
+            <p class="text-xl md:text-2xl mb-8 opacity-90">Access organized PDFs chapter-wise for your courses</p>
+            <div class="flex flex-wrap justify-center gap-4">
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
+                    <span class="text-sm font-medium">Secure Storage</span>
                 </div>
-            </section>
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
+                    <span class="text-sm font-medium">Chapter-wise Organization</span>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
+                    <span class="text-sm font-medium">Premium & Free Access</span>
+                </div>
+            </div>
         </div>
-    </main>
+    </section>
+
+    <!-- Subjects Section -->
+    <section id="subjects" class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h3 class="text-3xl font-bold text-gray-900 mb-4">Available Subjects</h3>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Choose from our collection of study materials. Some subjects are free, while others require premium access.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto" id="subjects-grid">
+                <!-- Subjects will be loaded here -->
+                <div class="loading-spinner text-center col-span-2">
+                    <i class="fas fa-spinner fa-spin text-3xl text-blue-600"></i>
+                    <p class="mt-4 text-gray-600">Loading subjects...</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- Admin Login Modal -->
-    <div id="adminModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Admin Login</h3>
-                <button class="modal-close" onclick="closeModal('adminModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="adminLoginForm">
-                    <div class="form-group">
-                        <label for="adminUsername">Username</label>
-                        <input type="text" id="adminUsername" name="username" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="adminPassword">Password</label>
-                        <input type="password" id="adminPassword" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary btn-full">
-                        <i class="fas fa-sign-in-alt"></i>
-                        Login
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Subject Access Modal -->
-    <div id="accessModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Access Required</h3>
-                <button class="modal-close" onclick="closeModal('accessModal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="access-info">
-                    <div class="access-icon">
-                        <i class="fas fa-crown"></i>
-                    </div>
-                    <h4 id="accessSubjectName">KLiC Hardware</h4>
-                    <p>This is a premium subject. Please enter the access password to view content.</p>
+    <div id="adminModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <div class="bg-blue-100 rounded-full p-4 w-20 h-20 mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-blue-600 text-3xl"></i>
                 </div>
-                <form id="accessForm">
-                    <div class="form-group">
-                        <label for="subjectPassword">Access Password</label>
-                        <input type="password" id="subjectPassword" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-premium btn-full">
-                        <i class="fas fa-unlock"></i>
-                        Access Content
-                    </button>
-                </form>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Admin Login</h3>
+                <p class="text-gray-600">Access the admin panel to manage study materials</p>
             </div>
+            
+            <form id="adminLoginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Email Address</label>
+                    <input type="email" id="adminEmail" placeholder="admin@edudrivehub32" required 
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="adminPassword" placeholder="Enter your password" required 
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" onclick="closeAdminModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button type="submit" id="adminLoginBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                        <span class="login-text">Login</span>
+                        <span class="login-spinner hidden"><i class="fas fa-spinner fa-spin"></i> Logging in...</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
-    <!-- Chapters Modal -->
-    <div id="chaptersModal" class="modal">
-        <div class="modal-content large">
-            <div class="modal-header">
-                <h3 id="chaptersSubjectName">Subject Chapters</h3>
-                <button class="modal-close" onclick="closeModal('chaptersModal')">&times;</button>
+    <!-- Premium Access Modal -->
+    <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <div class="bg-orange-100 rounded-full p-4 w-20 h-20 mx-auto mb-4">
+                    <i class="fas fa-crown text-orange-600 text-3xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Premium Access Required</h3>
+                <p class="text-gray-600">Enter the subject password to access KLiC Hardware materials</p>
             </div>
-            <div class="modal-body">
-                <div id="chaptersList">
-                    <!-- Chapters will be loaded here -->
+            
+            <form id="premiumAccessForm" class="space-y-6">
+                <input type="hidden" id="premiumSubjectCode">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Subject Password</label>
+                    <input type="password" id="premiumPassword" placeholder="Enter premium access password" required 
+                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
+                    <p class="text-sm text-gray-500 mt-2">Contact administrator for premium access credentials</p>
+                </div>
+                <div class="flex justify-between">
+                    <button type="button" onclick="closePremiumModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
+                    <button type="submit" id="premiumAccessBtn" class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700">
+                        <span class="access-text">Access</span>
+                        <span class="access-spinner hidden"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="col-span-2">
+                    <h5 class="text-2xl font-bold mb-4">
+                        <i class="fas fa-graduation-cap mr-2"></i>EduDriveHub
+                    </h5>
+                    <p class="text-gray-400 mb-6 max-w-md">
+                        Your secure study material vault. Access organized PDFs chapter-wise with premium and free subject options.
+                    </p>
+                </div>
+                <div>
+                    <h6 class="font-semibold mb-4">Quick Links</h6>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#subjects" class="hover:text-white transition-colors">Subjects</a></li>
+                        <li><a href="#about" class="hover:text-white transition-colors">About</a></li>
+                        <li><a href="#contact" class="hover:text-white transition-colors">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h6 class="font-semibold mb-4">Support</h6>
+                    <ul class="space-y-2 text-gray-400">
+                        <li><a href="#help" class="hover:text-white transition-colors">Help Center</a></li>
+                        <li><a href="#faq" class="hover:text-white transition-colors">FAQ</a></li>
+                        <li><a href="#technical" class="hover:text-white transition-colors">Technical Support</a></li>
+                    </ul>
                 </div>
             </div>
+            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
+                <p>&copy; 2024 EduDriveHub. All rights reserved. Built with security and education in mind.</p>
+            </div>
         </div>
-    </div>
-
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading...</p>
-        </div>
-    </div>
+    </footer>
 
     <script src="script.js"></script>
 </body>

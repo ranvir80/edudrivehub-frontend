@@ -1,312 +1,357 @@
-// Global variables
-let currentSubjects = [];
-let adminToken = localStorage.getItem('adminToken');
+// EduDriveHub Frontend JavaScript
 
-// API Configuration with CORS support
-const API_BASE_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:5000' 
-    : 'https://edudrivehub-backend-att2.onrender.com';
+// Configuration
+const API_BASE_URL = 'https://your-backend-url.render.com'; // Replace with your Render backend URL
+let isAuthenticated = false;
+let currentSubjectCode = '';
 
-// CORS-aware fetch wrapper
-const apiRequest = async (url, options = {}) => {
-    const defaultOptions = {
-        credentials: 'include', // Include cookies/auth headers
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
+// Initialize the application
+document.addEventListener('DOMContentLoaded', function() {
+    loadSubjects();
+    setupEventListeners();
+});
+
+// Setup event listeners
+function setupEventListeners() {
+    // Admin login form
+    const adminLoginForm = document.getElementById('adminLoginForm');
+    if (adminLoginForm) {
+        adminLoginForm.addEventListener('submit', handleAdminLogin);
+    }
+
+    // Premium access form
+    const premiumAccessForm = document.getElementById('premiumAccessForm');
+    if (premiumAccessForm) {
+        premiumAccessForm.addEventListener('submit', handlePremiumAccess);
+    }
+
+    // Close modals when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('fixed')) {
+            closeAllModals();
         }
-    };
+    });
 
-    const config = { ...defaultOptions, ...options };
-
-    try {
-        const response = await fetch(`${API_BASE_URL}${url}`, config);
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Request failed');
+    // ESC key to close modals
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllModals();
         }
-
-        return await response.json();
-    } catch (error) {
-        console.error('API Request failed:', error);
-        throw error;
-    }
-};
-
-// Utility functions
-function showLoading() {
-    document.getElementById('loadingOverlay').classList.add('active');
+    });
 }
 
-function hideLoading() {
-    document.getElementById('loadingOverlay').classList.remove('active');
-}
-
-function showAlert(message, type = 'error') {
-    // Remove existing alerts
-    const existingAlerts = document.querySelectorAll('.alert');
-    existingAlerts.forEach(alert => alert.remove());
-
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert ${type}`;
-    alertDiv.innerHTML = `
-        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
-        ${message}
-    `;
-
-    const container = document.querySelector('.container');
-    container.insertBefore(alertDiv, container.firstChild);
-
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        alertDiv.remove();
-    }, 5000);
-}
-
-function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-}
-
-function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
-
-// API calls
-async function apiCall(endpoint, options = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
-
-    if (adminToken) {
-        defaultOptions.headers['Authorization'] = `Bearer ${adminToken}`;
-    }
-
-    const response = await fetch(url, { ...defaultOptions, ...options });
-
-    if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || `HTTP ${response.status}`);
-    }
-
-    return response.json();
-}
-
-// Load subjects data
+// Load subjects from API
 async function loadSubjects() {
     try {
-        const subjects = await apiCall('/api/subjects');
-        currentSubjects = subjects;
-        updateSubjectCards();
+        showLoading();
+        const response = await fetch(`${API_BASE_URL}/api/subjects`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const subjects = await response.json();
+        displaySubjects(subjects);
     } catch (error) {
-        console.error('Failed to load subjects:', error);
-        showAlert('Failed to load subjects. Please try again.');
+        console.error('Error loading subjects:', error);
+        showError('Failed to load subjects. Please check if the backend is running.');
+    } finally {
+        hideLoading();
     }
 }
 
-// Update subject cards with current data
-function updateSubjectCards() {
-    const msCitCard = document.querySelector('[data-subject="ms-cit"]');
-    const klicCard = document.querySelector('[data-subject="klic-hardware"]');
-
-    // Find subjects from data
-    const msCit = currentSubjects.find(s => s.name === 'MS-CIT');
-    const klic = currentSubjects.find(s => s.name === 'KLiC Hardware');
-
-    // Update chapter counts
-    if (msCit) {
-        msCitCard.querySelector('.chapter-count').textContent = `${msCit.chapters.length} Chapters`;
-    }
-    if (klic) {
-        klicCard.querySelector('.chapter-count').textContent = `${klic.chapters.length} Chapters`;
-    }
-}
-
-// View subject chapters
-function viewSubject(subjectKey) {
-    const subjectName = subjectKey === 'ms-cit' ? 'MS-CIT' : 'KLiC Hardware';
-    const subject = currentSubjects.find(s => s.name === subjectName);
-
-    if (!subject) {
-        showAlert('Subject not found.');
+// Display subjects in the grid
+function displaySubjects(subjects) {
+    const grid = document.getElementById('subjects-grid');
+    
+    if (!subjects || subjects.length === 0) {
+        grid.innerHTML = `
+            <div class="col-span-2 text-center py-12">
+                <i class="fas fa-book text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No subjects available</h3>
+                <p class="text-gray-500">Subjects will appear here once they are added by administrators.</p>
+            </div>
+        `;
         return;
     }
 
-    showChapters(subject);
-}
-
-// Request access to premium subject
-function requestAccess(subjectKey) {
-    const subjectName = subjectKey === 'klic-hardware' ? 'KLiC Hardware' : 'MS-CIT';
-    document.getElementById('accessSubjectName').textContent = subjectName;
-    document.getElementById('subjectPassword').value = '';
-    openModal('accessModal');
-}
-
-// Show chapters modal
-function showChapters(subject) {
-    document.getElementById('chaptersSubjectName').textContent = subject.name;
-    const chaptersList = document.getElementById('chaptersList');
-
-    if (!subject.chapters || subject.chapters.length === 0) {
-        chaptersList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-file-alt"></i>
-                <p>No chapters available for this subject yet.</p>
+    grid.innerHTML = subjects.map(subject => `
+        <div class="subject-card bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-all duration-300">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-full ${subject.isPremium ? 'bg-orange-100' : 'bg-green-100'} flex items-center justify-center">
+                        <i class="fas ${getSubjectIcon(subject.code)} text-2xl ${subject.isPremium ? 'text-orange-600' : 'text-green-600'}"></i>
+                    </div>
+                </div>
+                <span class="${subject.isPremium ? 'premium-badge' : 'free-badge'}">
+                    <i class="fas ${subject.isPremium ? 'fa-crown' : 'fa-unlock'} mr-1"></i>
+                    ${subject.isPremium ? 'PREMIUM' : 'FREE'}
+                </span>
             </div>
-        `;
+            
+            <h4 class="text-xl font-bold text-gray-900 mb-2">${subject.name}</h4>
+            <p class="text-gray-600 mb-4">${subject.description}</p>
+            
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-500">
+                    <i class="fas fa-file-pdf mr-1"></i>
+                    Chapters Available
+                </div>
+                <button 
+                    onclick="handleSubjectAccess('${subject.code}', ${subject.isPremium})"
+                    class="px-4 py-2 rounded-lg font-medium transition-colors ${
+                        subject.isPremium 
+                            ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                            : 'bg-green-600 hover:bg-green-700 text-white'
+                    }"
+                >
+                    ${subject.isPremium ? 'Access Premium' : 'Access Now'}
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Get icon for subject
+function getSubjectIcon(code) {
+    switch (code) {
+        case 'mscit':
+            return 'fa-desktop';
+        case 'klic':
+            return 'fa-microchip';
+        default:
+            return 'fa-book';
+    }
+}
+
+// Handle subject access
+function handleSubjectAccess(subjectCode, isPremium) {
+    if (isPremium) {
+        currentSubjectCode = subjectCode;
+        openPremiumModal();
     } else {
-        chaptersList.innerHTML = subject.chapters.map(chapter => `
-            <div class="chapter-item">
-                <div class="chapter-info">
-                    <div class="chapter-icon">
-                        <i class="fas fa-file-pdf"></i>
-                    </div>
-                    <div class="chapter-details">
-                        <h5>${chapter.title}</h5>
-                        <p>Uploaded on ${new Date(chapter.uploadedAt).toLocaleDateString()}</p>
-                    </div>
-                </div>
-                <div class="chapter-actions">
-                    <button class="btn btn-primary btn-sm" onclick="viewPDF('${chapter.pdfUrl}', '${chapter.title}')">
-                        <i class="fas fa-eye"></i>
-                        View
-                    </button>
-                    <button class="btn btn-success btn-sm" onclick="downloadPDF('${chapter.pdfUrl}', '${chapter.title}')">
-                        <i class="fas fa-download"></i>
-                        Download
-                    </button>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    openModal('chaptersModal');
-}
-
-// View PDF in new tab
-function viewPDF(pdfUrl, title) {
-    window.open(pdfUrl, '_blank');
-}
-
-// Download PDF
-function downloadPDF(pdfUrl, title) {
-    const link = document.createElement('a');
-    link.href = pdfUrl;
-    link.download = `${title}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Admin login
-async function adminLogin(username, password) {
-    try {
-        showLoading();
-        const response = await apiCall('/api/admin/login', {
-            method: 'POST',
-            body: JSON.stringify({ username, password }),
-        });
-
-        if (response.token) {
-            adminToken = response.token;
-            localStorage.setItem('adminToken', adminToken);
-            showAlert('Login successful! Redirecting to admin panel...', 'success');
-            setTimeout(() => {
-                window.location.href = '/admin.html';
-            }, 1500);
-        }
-    } catch (error) {
-        showAlert(error.message || 'Login failed. Please check your credentials.');
-    } finally {
-        hideLoading();
+        window.location.href = `subject.html?code=${subjectCode}`;
     }
 }
 
-// Verify subject access
-async function verifySubjectAccess(subjectName, password) {
+// Modal functions
+function openAdminModal() {
+    document.getElementById('adminModal').classList.remove('hidden');
+    document.getElementById('adminModal').classList.add('modal-enter');
+}
+
+function closeAdminModal() {
+    document.getElementById('adminModal').classList.add('hidden');
+    document.getElementById('adminLoginForm').reset();
+    clearFormStates('adminLoginForm');
+}
+
+function openPremiumModal() {
+    document.getElementById('premiumModal').classList.remove('hidden');
+    document.getElementById('premiumModal').classList.add('modal-enter');
+    document.getElementById('premiumSubjectCode').value = currentSubjectCode;
+}
+
+function closePremiumModal() {
+    document.getElementById('premiumModal').classList.add('hidden');
+    document.getElementById('premiumAccessForm').reset();
+    clearFormStates('premiumAccessForm');
+    currentSubjectCode = '';
+}
+
+function closeAllModals() {
+    closeAdminModal();
+    closePremiumModal();
+}
+
+// Handle admin login
+async function handleAdminLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('adminEmail').value;
+    const password = document.getElementById('adminPassword').value;
+    const button = document.getElementById('adminLoginBtn');
+    
+    setButtonLoading(button, true);
+    
     try {
-        showLoading();
-        const subject = currentSubjects.find(s => s.name === subjectName);
-
-        if (!subject) {
-            throw new Error('Subject not found');
-        }
-
-        const response = await apiCall(`/api/subjects/${subject.id}/access`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
             method: 'POST',
-            body: JSON.stringify({ password }),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, password }),
         });
-
-        // Update the subject with full chapter data
-        const subjectIndex = currentSubjects.findIndex(s => s.id === subject.id);
-        if (subjectIndex !== -1) {
-            currentSubjects[subjectIndex] = response;
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Login failed');
         }
-
-        closeModal('accessModal');
-        showAlert('Access granted! Loading content...', 'success');
+        
+        // Store authentication state
+        localStorage.setItem('adminAuth', JSON.stringify(data.admin));
+        isAuthenticated = true;
+        
+        showNotification('Login successful! Redirecting to admin panel...', 'success');
+        
         setTimeout(() => {
-            showChapters(response);
-        }, 1000);
+            window.location.href = 'admin.html';
+        }, 1500);
+        
     } catch (error) {
-        showAlert(error.message || 'Invalid password. Please try again.');
+        console.error('Admin login error:', error);
+        showNotification(error.message || 'Login failed', 'error');
     } finally {
-        hideLoading();
+        setButtonLoading(button, false);
     }
 }
 
-// Event listeners
-document.addEventListener('DOMContentLoaded', function() {
-    // Load initial data
-    loadSubjects();
-
-    // Admin login button
-    document.getElementById('adminLoginBtn').addEventListener('click', function() {
-        openModal('adminModal');
-    });
-
-    // Admin login form
-    document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const username = document.getElementById('adminUsername').value;
-        const password = document.getElementById('adminPassword').value;
-        adminLogin(username, password);
-    });
-
-    // Subject access form
-    document.getElementById('accessForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const subjectName = document.getElementById('accessSubjectName').textContent;
-        const password = document.getElementById('subjectPassword').value;
-        verifySubjectAccess(subjectName, password);
-    });
-
-    // Close modals when clicking outside
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                modal.classList.remove('active');
-            }
+// Handle premium access
+async function handlePremiumAccess(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('premiumPassword').value;
+    const subjectCode = document.getElementById('premiumSubjectCode').value;
+    const button = document.getElementById('premiumAccessBtn');
+    
+    setButtonLoading(button, true);
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/subjects/verify-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                subjectCode, 
+                password 
+            }),
         });
-    });
-
-    // Keyboard navigation
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal.active').forEach(modal => {
-                modal.classList.remove('active');
-            });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Invalid password');
         }
-    });
-});
+        
+        // Store premium access
+        localStorage.setItem(`premiumAccess_${subjectCode}`, 'true');
+        
+        showNotification('Access granted! Redirecting...', 'success');
+        
+        setTimeout(() => {
+            window.location.href = `subject.html?code=${subjectCode}`;
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Premium access error:', error);
+        showNotification(error.message || 'Access denied', 'error');
+    } finally {
+        setButtonLoading(button, false);
+    }
+}
 
-// Global functions for HTML onclick handlers
-window.viewSubject = viewSubject;
-window.requestAccess = requestAccess;
-window.closeModal = closeModal;
-window.viewPDF = viewPDF;
-window.downloadPDF = downloadPDF;
+// Utility functions
+function showLoading() {
+    const grid = document.getElementById('subjects-grid');
+    grid.innerHTML = `
+        <div class="col-span-2 text-center py-12">
+            <i class="fas fa-spinner fa-spin text-4xl text-blue-600 mb-4"></i>
+            <p class="text-gray-600">Loading subjects...</p>
+        </div>
+    `;
+}
+
+function hideLoading() {
+    // Loading will be replaced by displaySubjects
+}
+
+function showError(message) {
+    const grid = document.getElementById('subjects-grid');
+    grid.innerHTML = `
+        <div class="col-span-2 text-center py-12">
+            <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-900 mb-2">Error Loading Subjects</h3>
+            <p class="text-gray-600 mb-4">${message}</p>
+            <button onclick="loadSubjects()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                <i class="fas fa-redo mr-2"></i>Try Again
+            </button>
+        </div>
+    `;
+}
+
+function setButtonLoading(button, isLoading) {
+    const textSpan = button.querySelector('.login-text, .access-text');
+    const spinnerSpan = button.querySelector('.login-spinner, .access-spinner');
+    
+    if (isLoading) {
+        button.disabled = true;
+        if (textSpan) textSpan.classList.add('hidden');
+        if (spinnerSpan) spinnerSpan.classList.remove('hidden');
+    } else {
+        button.disabled = false;
+        if (textSpan) textSpan.classList.remove('hidden');
+        if (spinnerSpan) spinnerSpan.classList.add('hidden');
+    }
+}
+
+function clearFormStates(formId) {
+    const form = document.getElementById(formId);
+    const buttons = form.querySelectorAll('button[type="submit"]');
+    buttons.forEach(button => setButtonLoading(button, false));
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existing = document.querySelectorAll('.notification');
+    existing.forEach(el => el.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${getNotificationIcon(type)} mr-2"></i>
+            <span>${message}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success':
+            return 'fa-check-circle';
+        case 'error':
+            return 'fa-exclamation-circle';
+        case 'info':
+        default:
+            return 'fa-info-circle';
+    }
+}
+
+// Check authentication status on page load
+function checkAuthStatus() {
+    const adminAuth = localStorage.getItem('adminAuth');
+    if (adminAuth) {
+        isAuthenticated = true;
+        // Update UI to show authenticated state
+        updateAuthenticatedUI();
+    }
+}
+
+function updateAuthenticatedUI() {
+    // This function can be used to update the UI when user is authenticated
+    // For example, show different navigation items or admin-specific content
+}
+
+// Initialize auth check
+checkAuthStatus();
