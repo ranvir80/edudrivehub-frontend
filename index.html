@@ -1,169 +1,170 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduDriveHub - Nakshatra Infotech</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>EduDriveHub - Educational Study Materials</title>
+    <meta name="description" content="Access your educational study materials with organized chapters and secure content delivery.">
+    <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <div class="logo-icon">
-                    <i class="fas fa-graduation-cap"></i>
-                </div>
-                <span class="logo-text">EduDriveHub</span>
-            </div>
-            <div class="nav-links">
-                <a href="#" class="nav-link active" onclick="showHome()">Home</a>
-                <a href="#" class="nav-link" onclick="showAdmin()">Admin</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Home Page -->
-    <div id="home-page" class="page active">
-        <!-- Hero Section -->
-        <div class="hero-section">
-            <div class="container">
-                <h1 class="hero-title">Access Study Materials</h1>
-                <p class="hero-description">
-                    Access MSCIT (open access) and KLiC Hardware (premium) study materials. 
-                    Premium subjects require a password to view chapter-wise PDF content.
-                </p>
-            </div>
-        </div>
-
-        <!-- Subjects Section -->
-        <div class="subjects-section">
-            <div class="container">
-                <div class="subjects-grid" id="subjects-grid">
-                    <!-- Subjects will be loaded here -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Page -->
-    <div id="admin-page" class="page">
+    <!-- Header -->
+    <header class="header">
         <div class="container">
-            <!-- Admin Login -->
-            <div id="admin-login" class="auth-form">
-                <h2>Admin Login</h2>
-                <form id="login-form">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="admin-email" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Password</label>
-                        <input type="password" id="admin-password" required>
-                    </div>
-                    <button type="submit" class="btn-primary">Login</button>
-                </form>
+            <div class="nav-brand">
+                <i class="fas fa-graduation-cap"></i>
+                <h1>EduDriveHub</h1>
             </div>
-
-            <!-- Admin Dashboard -->
-            <div id="admin-dashboard" class="admin-dashboard" style="display: none;">
-                <div class="dashboard-header">
-                    <h2>Admin Dashboard</h2>
-                    <button onclick="logout()" class="btn-secondary">Logout</button>
-                </div>
-
-                <!-- Upload Section -->
-                <div class="upload-section">
-                    <h3>Upload New Chapter</h3>
-                    <form id="upload-form" enctype="multipart/form-data">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Subject</label>
-                                <select id="upload-subject" required>
-                                    <option value="">Select Subject</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Chapter Title</label>
-                                <input type="text" id="chapter-title" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>PDF File</label>
-                            <input type="file" id="pdf-file" accept=".pdf" required>
-                        </div>
-                        <button type="submit" class="btn-primary">Upload Chapter</button>
-                    </form>
-                </div>
-
-                <!-- Chapters List -->
-                <div class="chapters-section">
-                    <h3>Manage Chapters</h3>
-                    <div id="chapters-list">
-                        <!-- Chapters will be loaded here -->
-                    </div>
-                </div>
+            <div class="nav-actions">
+                <button id="adminLoginBtn" class="btn btn-primary">
+                    <i class="fas fa-shield-alt"></i>
+                    Admin Login
+                </button>
             </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Chapter Modal -->
-    <div id="chapter-modal" class="modal">
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Hero Section -->
+            <section class="hero">
+                <h2>Welcome to EduDriveHub</h2>
+                <p>Your comprehensive study material platform with organized chapters and easy access to educational content.</p>
+            </section>
+
+            <!-- Subjects Section -->
+            <section class="subjects">
+                <h3>Available Subjects</h3>
+                <div class="subjects-grid" id="subjectsGrid">
+                    <!-- MS-CIT Subject Card -->
+                    <div class="subject-card free" data-subject="ms-cit">
+                        <div class="subject-header">
+                            <div class="subject-icon free">
+                                <i class="fas fa-computer"></i>
+                            </div>
+                            <div class="subject-info">
+                                <h4>MS-CIT</h4>
+                                <span class="badge free">
+                                    <i class="fas fa-unlock"></i>
+                                    Free
+                                </span>
+                            </div>
+                        </div>
+                        <p class="subject-description">Microsoft Certificate in Information Technology - Basic computer skills and digital literacy.</p>
+                        <div class="subject-footer">
+                            <span class="chapter-count">0 Chapters</span>
+                            <button class="btn btn-success" onclick="viewSubject('ms-cit')">
+                                View Content
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- KLiC Hardware Subject Card -->
+                    <div class="subject-card premium" data-subject="klic-hardware">
+                        <div class="subject-header">
+                            <div class="subject-icon premium">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div class="subject-info">
+                                <h4>KLiC Hardware</h4>
+                                <span class="badge premium">
+                                    <i class="fas fa-crown"></i>
+                                    Premium
+                                </span>
+                            </div>
+                        </div>
+                        <p class="subject-description">Kerala Learning Initiative on Computers - Advanced hardware concepts and troubleshooting.</p>
+                        <div class="subject-footer">
+                            <span class="chapter-count">0 Chapters</span>
+                            <button class="btn btn-premium" onclick="requestAccess('klic-hardware')">
+                                Access Required
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="modal-subject-title">Chapters</h3>
-                <span class="close" onclick="closeModal()">&times;</span>
+                <h3>Admin Login</h3>
+                <button class="modal-close" onclick="closeModal('adminModal')">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="modal-chapters-list">
+                <form id="adminLoginForm">
+                    <div class="form-group">
+                        <label for="adminUsername">Username</label>
+                        <input type="text" id="adminUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="adminPassword">Password</label>
+                        <input type="password" id="adminPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-full">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Login
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subject Access Modal -->
+    <div id="accessModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Access Required</h3>
+                <button class="modal-close" onclick="closeModal('accessModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="access-info">
+                    <div class="access-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <h4 id="accessSubjectName">KLiC Hardware</h4>
+                    <p>This is a premium subject. Please enter the access password to view content.</p>
+                </div>
+                <form id="accessForm">
+                    <div class="form-group">
+                        <label for="subjectPassword">Access Password</label>
+                        <input type="password" id="subjectPassword" name="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-premium btn-full">
+                        <i class="fas fa-unlock"></i>
+                        Access Content
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chapters Modal -->
+    <div id="chaptersModal" class="modal">
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h3 id="chaptersSubjectName">Subject Chapters</h3>
+                <button class="modal-close" onclick="closeModal('chaptersModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="chaptersList">
                     <!-- Chapters will be loaded here -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Password Modal -->
-    <div id="password-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Enter Password</h3>
-                <span class="close" onclick="closePasswordModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="password-form">
-                    <div class="form-group">
-                        <label>Subject Password</label>
-                        <input type="password" id="subject-password" required>
-                    </div>
-                    <button type="submit" class="btn-primary">Access Chapters</button>
-                </form>
-            </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading...</p>
         </div>
     </div>
-
-    <!-- Loading Spinner -->
-    <div id="loading" class="loading" style="display: none;">
-        <div class="spinner"></div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-graduation-cap"></i>
-                    </div>
-                    <span class="logo-text">EduDriveHub</span>
-                </div>
-                <p class="footer-text">© 2024 Nakshatra Infotech. All rights reserved.</p>
-                <p class="footer-subtext">Secure document management for educational institutions</p>
-            </div>
-        </div>
-    </footer>
 
     <script src="script.js"></script>
 </body>

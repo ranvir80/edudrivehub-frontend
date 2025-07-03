@@ -1,450 +1,312 @@
+// Global variables
+let currentSubjects = [];
+let adminToken = localStorage.getItem('adminToken');
 
-// API Configuration - automatically detects environment
-const API_URL = window.location.hostname === 'localhost' 
+// API Configuration with CORS support
+const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
-    : window.location.hostname.includes('vercel.app') 
-        ? 'https://edudrivehub-backend-fl3g.onrender.com'  // Replace with your actual Render URL
-        : window.location.hostname.includes('replit.dev')
-            ? window.location.origin.replace(':80', ':5000').replace(':443', ':5000')
-            : 'https://your-backend-url.onrender.com';
+    : 'https://your-backend.onrender.com';
 
-// Global State
-let currentUser = null;
-let currentSubject = null;
-
-// Initialize App
-document.addEventListener('DOMContentLoaded', function() {
-    loadSubjects();
-    setupEventListeners();
-    checkAuthStatus();
-});
-
-// Event Listeners
-function setupEventListeners() {
-    // Login form
-    document.getElementById('login-form').addEventListener('submit', handleLogin);
-    
-    // Upload form
-    document.getElementById('upload-form').addEventListener('submit', handleUpload);
-    
-    // Password form
-    document.getElementById('password-form').addEventListener('submit', handlePasswordSubmit);
-    
-    // Modal close events
-    window.onclick = function(event) {
-        const chapterModal = document.getElementById('chapter-modal');
-        const passwordModal = document.getElementById('password-modal');
-        if (event.target === chapterModal) {
-            closeModal();
+// CORS-aware fetch wrapper
+const apiRequest = async (url, options = {}) => {
+    const defaultOptions = {
+        credentials: 'include', // Include cookies/auth headers
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
         }
-        if (event.target === passwordModal) {
-            closePasswordModal();
-        }
-    }
-}
+    };
 
-// Navigation
-function showHome() {
-    document.getElementById('home-page').classList.add('active');
-    document.getElementById('admin-page').classList.remove('active');
-    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-    document.querySelector('[onclick="showHome()"]').classList.add('active');
-}
+    const config = { ...defaultOptions, ...options };
 
-function showAdmin() {
-    document.getElementById('home-page').classList.remove('active');
-    document.getElementById('admin-page').classList.add('active');
-    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-    document.querySelector('[onclick="showAdmin()"]').classList.add('active');
-    
-    if (currentUser) {
-        loadAdminDashboard();
-    }
-}
-
-// Auth Functions
-function checkAuthStatus() {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-        currentUser = { token };
-        if (document.getElementById('admin-page').classList.contains('active')) {
-            loadAdminDashboard();
-        }
-    }
-}
-
-async function handleLogin(e) {
-    e.preventDefault();
-    showLoading(true);
-    
-    const email = document.getElementById('admin-email').value;
-    const password = document.getElementById('admin-password').value;
-    
     try {
-        const response = await fetch(`${API_URL}/api/admin/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            localStorage.setItem('adminToken', data.token);
-            currentUser = data;
-            loadAdminDashboard();
-            showAlert('Login successful!', 'success');
-        } else {
-            showAlert(data.error || 'Login failed', 'error');
+        const response = await fetch(`${API_BASE_URL}${url}`, config);
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Request failed');
         }
+
+        return await response.json();
     } catch (error) {
-        showAlert('Network error. Please try again.', 'error');
-    } finally {
-        showLoading(false);
+        console.error('API Request failed:', error);
+        throw error;
     }
+};
+
+// Utility functions
+function showLoading() {
+    document.getElementById('loadingOverlay').classList.add('active');
 }
 
-function logout() {
-    localStorage.removeItem('adminToken');
-    currentUser = null;
-    document.getElementById('admin-login').style.display = 'block';
-    document.getElementById('admin-dashboard').style.display = 'none';
-    document.getElementById('login-form').reset();
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
 }
 
-// Load Data Functions
+function showAlert(message, type = 'error') {
+    // Remove existing alerts
+    const existingAlerts = document.querySelectorAll('.alert');
+    existingAlerts.forEach(alert => alert.remove());
+
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${type}`;
+    alertDiv.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+        ${message}
+    `;
+
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+}
+
+// API calls
+async function apiCall(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    const defaultOptions = {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+
+    if (adminToken) {
+        defaultOptions.headers['Authorization'] = `Bearer ${adminToken}`;
+    }
+
+    const response = await fetch(url, { ...defaultOptions, ...options });
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(error || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+}
+
+// Load subjects data
 async function loadSubjects() {
-    showLoading(true);
-    
     try {
-        const response = await fetch(`${API_URL}/api/subjects`);
-        const subjects = await response.json();
-        
-        if (response.ok) {
-            displaySubjects(subjects);
-            populateSubjectSelect(subjects);
-        } else {
-            showAlert('Failed to load subjects', 'error');
-        }
+        const subjects = await apiCall('/api/subjects');
+        currentSubjects = subjects;
+        updateSubjectCards();
     } catch (error) {
-        showAlert('Network error. Please check your connection.', 'error');
-    } finally {
-        showLoading(false);
+        console.error('Failed to load subjects:', error);
+        showAlert('Failed to load subjects. Please try again.');
     }
 }
 
-function displaySubjects(subjects) {
-    const grid = document.getElementById('subjects-grid');
-    grid.innerHTML = '';
-    
-    subjects.forEach(subject => {
-        const card = document.createElement('div');
-        card.className = `subject-card ${subject.type}`;
-        card.onclick = () => openSubject(subject);
-        
-        card.innerHTML = `
-            <div class="subject-icon ${subject.color}">
-                <i class="${subject.icon}"></i>
-            </div>
-            <h3 class="subject-title">${subject.name}</h3>
-            <p class="subject-description">${subject.description}</p>
-            <span class="subject-type ${subject.type}">${subject.type}</span>
-        `;
-        
-        grid.appendChild(card);
-    });
-}
+// Update subject cards with current data
+function updateSubjectCards() {
+    const msCitCard = document.querySelector('[data-subject="ms-cit"]');
+    const klicCard = document.querySelector('[data-subject="klic-hardware"]');
 
-function populateSubjectSelect(subjects) {
-    const select = document.getElementById('upload-subject');
-    select.innerHTML = '<option value="">Select Subject</option>';
-    
-    subjects.forEach(subject => {
-        const option = document.createElement('option');
-        option.value = subject.name;
-        option.textContent = subject.name;
-        select.appendChild(option);
-    });
-}
+    // Find subjects from data
+    const msCit = currentSubjects.find(s => s.name === 'MS-CIT');
+    const klic = currentSubjects.find(s => s.name === 'KLiC Hardware');
 
-async function loadAdminDashboard() {
-    document.getElementById('admin-login').style.display = 'none';
-    document.getElementById('admin-dashboard').style.display = 'block';
-    
-    // Load all chapters for admin
-    await loadAllChapters();
-}
-
-async function loadAllChapters() {
-    showLoading(true);
-    
-    try {
-        const response = await fetch(`${API_URL}/api/admin/chapters`, {
-            headers: {
-                'Authorization': `Bearer ${currentUser.token}`,
-            },
-        });
-        
-        const chapters = await response.json();
-        
-        if (response.ok) {
-            displayAdminChapters(chapters);
-        } else {
-            showAlert('Failed to load chapters', 'error');
-        }
-    } catch (error) {
-        showAlert('Network error', 'error');
-    } finally {
-        showLoading(false);
+    // Update chapter counts
+    if (msCit) {
+        msCitCard.querySelector('.chapter-count').textContent = `${msCit.chapters.length} Chapters`;
+    }
+    if (klic) {
+        klicCard.querySelector('.chapter-count').textContent = `${klic.chapters.length} Chapters`;
     }
 }
 
-function displayAdminChapters(chapters) {
-    const container = document.getElementById('chapters-list');
-    container.innerHTML = '';
-    
-    if (chapters.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #6b7280;">No chapters uploaded yet.</p>';
+// View subject chapters
+function viewSubject(subjectKey) {
+    const subjectName = subjectKey === 'ms-cit' ? 'MS-CIT' : 'KLiC Hardware';
+    const subject = currentSubjects.find(s => s.name === subjectName);
+
+    if (!subject) {
+        showAlert('Subject not found.');
         return;
     }
-    
-    chapters.forEach(chapter => {
-        const item = document.createElement('div');
-        item.className = 'chapter-item';
-        
-        item.innerHTML = `
-            <div class="chapter-info">
-                <h4>${chapter.chapter_title}</h4>
-                <p>${chapter.subject} • Uploaded: ${new Date(chapter.uploaded_at).toLocaleDateString()}</p>
-            </div>
-            <div class="chapter-actions">
-                <button class="btn-primary btn-small" onclick="window.open('${chapter.pdf_url}', '_blank')">
-                    <i class="fas fa-eye"></i> View
-                </button>
-                <button class="btn-danger btn-small" onclick="deleteChapter(${chapter.id})">
-                    <i class="fas fa-trash"></i> Delete
-                </button>
+
+    showChapters(subject);
+}
+
+// Request access to premium subject
+function requestAccess(subjectKey) {
+    const subjectName = subjectKey === 'klic-hardware' ? 'KLiC Hardware' : 'MS-CIT';
+    document.getElementById('accessSubjectName').textContent = subjectName;
+    document.getElementById('subjectPassword').value = '';
+    openModal('accessModal');
+}
+
+// Show chapters modal
+function showChapters(subject) {
+    document.getElementById('chaptersSubjectName').textContent = subject.name;
+    const chaptersList = document.getElementById('chaptersList');
+
+    if (!subject.chapters || subject.chapters.length === 0) {
+        chaptersList.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-file-alt"></i>
+                <p>No chapters available for this subject yet.</p>
             </div>
         `;
-        
-        container.appendChild(item);
-    });
-}
-
-// Subject Functions
-async function openSubject(subject) {
-    currentSubject = subject;
-    
-    if (subject.type === 'premium' && subject.password_hash) {
-        showPasswordModal(subject);
     } else {
-        await loadChapters(subject.name);
-    }
-}
-
-function showPasswordModal(subject) {
-    document.getElementById('password-modal').style.display = 'block';
-    document.getElementById('subject-password').focus();
-}
-
-function closePasswordModal() {
-    document.getElementById('password-modal').style.display = 'none';
-    document.getElementById('password-form').reset();
-}
-
-async function handlePasswordSubmit(e) {
-    e.preventDefault();
-    showLoading(true);
-    
-    const password = document.getElementById('subject-password').value;
-    
-    try {
-        const response = await fetch(`${API_URL}/api/subjects/verify-password`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                subject: currentSubject.name,
-                password: password,
-            }),
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            closePasswordModal();
-            await loadChapters(currentSubject.name);
-        } else {
-            showAlert(data.error || 'Invalid password', 'error');
-        }
-    } catch (error) {
-        showAlert('Network error', 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-async function loadChapters(subjectName) {
-    showLoading(true);
-    
-    try {
-        const response = await fetch(`${API_URL}/api/chapters/${encodeURIComponent(subjectName)}`);
-        const chapters = await response.json();
-        
-        if (response.ok) {
-            showChapterModal(subjectName, chapters);
-        } else {
-            showAlert('Failed to load chapters', 'error');
-        }
-    } catch (error) {
-        showAlert('Network error', 'error');
-    } finally {
-        showLoading(false);
-    }
-}
-
-function showChapterModal(subjectName, chapters) {
-    document.getElementById('modal-subject-title').textContent = `${subjectName} - Chapters`;
-    
-    const container = document.getElementById('modal-chapters-list');
-    container.innerHTML = '';
-    
-    if (chapters.length === 0) {
-        container.innerHTML = '<p style="text-align: center; color: #6b7280;">No chapters available yet.</p>';
-    } else {
-        chapters.forEach(chapter => {
-            const item = document.createElement('div');
-            item.className = 'chapter-item';
-            
-            item.innerHTML = `
+        chaptersList.innerHTML = subject.chapters.map(chapter => `
+            <div class="chapter-item">
                 <div class="chapter-info">
-                    <h4>${chapter.chapter_title}</h4>
-                    <p>Uploaded: ${new Date(chapter.uploaded_at).toLocaleDateString()}</p>
+                    <div class="chapter-icon">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="chapter-details">
+                        <h5>${chapter.title}</h5>
+                        <p>Uploaded on ${new Date(chapter.uploadedAt).toLocaleDateString()}</p>
+                    </div>
                 </div>
                 <div class="chapter-actions">
-                    <button class="btn-primary btn-small" onclick="window.open('${chapter.pdf_url}', '_blank')">
-                        <i class="fas fa-download"></i> Download PDF
+                    <button class="btn btn-primary btn-sm" onclick="viewPDF('${chapter.pdfUrl}', '${chapter.title}')">
+                        <i class="fas fa-eye"></i>
+                        View
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="downloadPDF('${chapter.pdfUrl}', '${chapter.title}')">
+                        <i class="fas fa-download"></i>
+                        Download
                     </button>
                 </div>
-            `;
-            
-            container.appendChild(item);
-        });
+            </div>
+        `).join('');
     }
-    
-    document.getElementById('chapter-modal').style.display = 'block';
+
+    openModal('chaptersModal');
 }
 
-function closeModal() {
-    document.getElementById('chapter-modal').style.display = 'none';
-    currentSubject = null;
+// View PDF in new tab
+function viewPDF(pdfUrl, title) {
+    window.open(pdfUrl, '_blank');
 }
 
-// Upload Functions
-async function handleUpload(e) {
-    e.preventDefault();
-    showLoading(true);
-    
-    const formData = new FormData();
-    formData.append('subject', document.getElementById('upload-subject').value);
-    formData.append('chapterTitle', document.getElementById('chapter-title').value);
-    formData.append('pdf', document.getElementById('pdf-file').files[0]);
-    
+// Download PDF
+function downloadPDF(pdfUrl, title) {
+    const link = document.createElement('a');
+    link.href = pdfUrl;
+    link.download = `${title}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Admin login
+async function adminLogin(username, password) {
     try {
-        const response = await fetch(`${API_URL}/api/chapters`, {
+        showLoading();
+        const response = await apiCall('/api/admin/login', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${currentUser.token}`,
-            },
-            body: formData,
+            body: JSON.stringify({ username, password }),
         });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showAlert('Chapter uploaded successfully!', 'success');
-            document.getElementById('upload-form').reset();
-            await loadAllChapters();
-        } else {
-            showAlert(data.error || 'Upload failed', 'error');
+
+        if (response.token) {
+            adminToken = response.token;
+            localStorage.setItem('adminToken', adminToken);
+            showAlert('Login successful! Redirecting to admin panel...', 'success');
+            setTimeout(() => {
+                window.location.href = '/admin.html';
+            }, 1500);
         }
     } catch (error) {
-        showAlert('Network error', 'error');
+        showAlert(error.message || 'Login failed. Please check your credentials.');
     } finally {
-        showLoading(false);
+        hideLoading();
     }
 }
 
-async function deleteChapter(chapterId) {
-    if (!confirm('Are you sure you want to delete this chapter?')) {
-        return;
-    }
-    
-    showLoading(true);
-    
+// Verify subject access
+async function verifySubjectAccess(subjectName, password) {
     try {
-        const response = await fetch(`${API_URL}/api/chapters/${chapterId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${currentUser.token}`,
-            },
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            showAlert('Chapter deleted successfully!', 'success');
-            await loadAllChapters();
-        } else {
-            showAlert(data.error || 'Delete failed', 'error');
+        showLoading();
+        const subject = currentSubjects.find(s => s.name === subjectName);
+
+        if (!subject) {
+            throw new Error('Subject not found');
         }
+
+        const response = await apiCall(`/api/subjects/${subject.id}/access`, {
+            method: 'POST',
+            body: JSON.stringify({ password }),
+        });
+
+        // Update the subject with full chapter data
+        const subjectIndex = currentSubjects.findIndex(s => s.id === subject.id);
+        if (subjectIndex !== -1) {
+            currentSubjects[subjectIndex] = response;
+        }
+
+        closeModal('accessModal');
+        showAlert('Access granted! Loading content...', 'success');
+        setTimeout(() => {
+            showChapters(response);
+        }, 1000);
     } catch (error) {
-        showAlert('Network error', 'error');
+        showAlert(error.message || 'Invalid password. Please try again.');
     } finally {
-        showLoading(false);
+        hideLoading();
     }
 }
 
-// Utility Functions
-function showLoading(show) {
-    document.getElementById('loading').style.display = show ? 'flex' : 'none';
-}
+// Event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial data
+    loadSubjects();
 
-function showAlert(message, type) {
-    // Create alert element
-    const alert = document.createElement('div');
-    alert.className = `alert alert-${type}`;
-    alert.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 15px 20px;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        z-index: 4000;
-        opacity: 0;
-        transition: opacity 0.3s;
-    `;
-    
-    if (type === 'success') {
-        alert.style.backgroundColor = '#10b981';
-    } else {
-        alert.style.backgroundColor = '#ef4444';
-    }
-    
-    alert.textContent = message;
-    document.body.appendChild(alert);
-    
-    // Show alert
-    setTimeout(() => alert.style.opacity = '1', 100);
-    
-    // Remove alert after 3 seconds
-    setTimeout(() => {
-        alert.style.opacity = '0';
-        setTimeout(() => document.body.removeChild(alert), 300);
-    }, 3000);
-}
+    // Admin login button
+    document.getElementById('adminLoginBtn').addEventListener('click', function() {
+        openModal('adminModal');
+    });
+
+    // Admin login form
+    document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const username = document.getElementById('adminUsername').value;
+        const password = document.getElementById('adminPassword').value;
+        adminLogin(username, password);
+    });
+
+    // Subject access form
+    document.getElementById('accessForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const subjectName = document.getElementById('accessSubjectName').textContent;
+        const password = document.getElementById('subjectPassword').value;
+        verifySubjectAccess(subjectName, password);
+    });
+
+    // Close modals when clicking outside
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+            }
+        });
+    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal.active').forEach(modal => {
+                modal.classList.remove('active');
+            });
+        }
+    });
+});
+
+// Global functions for HTML onclick handlers
+window.viewSubject = viewSubject;
+window.requestAccess = requestAccess;
+window.closeModal = closeModal;
+window.viewPDF = viewPDF;
+window.downloadPDF = downloadPDF;

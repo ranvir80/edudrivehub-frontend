@@ -1,0 +1,21 @@
+{
+  "name": "edudrivehub-frontend",
+  "version": "1.0.0",
+  "description": "EduDriveHub Frontend - Pure HTML/CSS/JS",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server . -p 3000 -o",
+    "build": "echo 'Frontend build complete'",
+    "deploy": "echo 'Deploy to Vercel'"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "keywords": ["education", "frontend", "html", "css", "javascript"],
+  "author": "EduDriveHub Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/edudrivehub-frontend.git"
+  }
+}
