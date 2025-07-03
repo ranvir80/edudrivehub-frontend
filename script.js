@@ -1,7 +1,7 @@
 // EduDriveHub Frontend JavaScript
 
 // Configuration
-const API_BASE_URL = 'https://your-backend-url.render.com'; // Replace with your Render backend URL
+const API_BASE_URL = 'https://edudrivehub-backend-r9p2.onrender.com'; // Replace with your Render backend URL
 let isAuthenticated = false;
 let currentSubjectCode = '';
 
