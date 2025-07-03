@@ -5,7 +5,8 @@ let selectedFile = null;
 
 // API Configuration
 const API_BASE_URL = window.location.origin;
-
+    ? 'http://localhost:5000'
+    : 'https://edudrivehub-backend-att2.onrender.com';
 // Check authentication on page load
 if (!adminToken) {
     window.location.href = '/';

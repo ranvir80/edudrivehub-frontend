@@ -5,7 +5,7 @@ let adminToken = localStorage.getItem('adminToken');
 // API Configuration with CORS support
 const API_BASE_URL = window.location.hostname === 'localhost' 
     ? 'http://localhost:5000' 
-    : 'https://your-backend.onrender.com';
+    : 'https://edudrivehub-backend-att2.onrender.com';
 
 // CORS-aware fetch wrapper
 const apiRequest = async (url, options = {}) => {
