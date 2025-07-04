@@ -197,8 +197,12 @@ async function handleAdminLogin(e) {
             throw new Error(data.message || 'Login failed');
         }
         
-        // Store authentication state
-        localStorage.setItem('adminAuth', JSON.stringify(data.admin));
+        // Store authentication state with token
+        const authData = {
+            ...data.admin,
+            token: data.token
+        };
+        localStorage.setItem('adminAuth', JSON.stringify(authData));
         isAuthenticated = true;
         
         showNotification('Login successful! Redirecting to admin panel...', 'success');

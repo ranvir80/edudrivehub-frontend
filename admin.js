@@ -14,8 +14,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Check if admin is authenticated
 function checkAdminAuth() {
-    const auth = localStorage.getItem('adminAuth');
-    if (!auth) {
+    const authData = localStorage.getItem('adminAuth');
+    if (!authData) {
         showNotification('Please login to access admin panel', 'error');
         setTimeout(() => {
             window.location.href = 'index.html';
@@ -24,7 +24,13 @@ function checkAdminAuth() {
     }
     
     try {
-        adminAuth = JSON.parse(auth);
+        adminAuth = JSON.parse(authData);
+        // Check if we have both admin data and token
+        if (!adminAuth.token) {
+            console.error('No token found in auth data');
+            logout();
+            return;
+        }
         document.getElementById('adminName').textContent = adminAuth.username || 'Admin';
     } catch (error) {
         console.error('Invalid auth data:', error);
