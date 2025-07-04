@@ -1,7 +1,7 @@
 // EduDriveHub Frontend JavaScript
 
-// Configuration
-const API_BASE_URL = 'https://edudrivehub-backend-r9p2.onrender.com'; // Replace with your Render backend URL
+// Configuration - Updated for Render deployment
+const API_BASE_URL = 'https://edudrivehub-backend-r9p2.onrender.com';
 let isAuthenticated = false;
 let currentSubjectCode = '';
 
@@ -44,7 +44,11 @@ function setupEventListeners() {
 async function loadSubjects() {
     try {
         showLoading();
-        const response = await fetch(`${API_BASE_URL}/api/subjects`);
+        const response = await fetch(`${API_BASE_URL}/api/subjects`, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -54,7 +58,11 @@ async function loadSubjects() {
         displaySubjects(subjects);
     } catch (error) {
         console.error('Error loading subjects:', error);
-        showError('Failed to load subjects. Please check if the backend is running.');
+        if (error.message.includes('fetch')) {
+            showError('Cannot connect to backend server. Please ensure the backend is running on port 5000.');
+        } else {
+            showError('Failed to load subjects. Please check if the backend is running.');
+        }
     } finally {
         hideLoading();
     }

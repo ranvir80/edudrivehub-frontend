@@ -1,6 +1,7 @@
 // Admin Panel JavaScript for EduDriveHub
 
-const API_BASE_URL = 'https://edudrivehub-backend-r9p2.onrender.com'; // Replace with your Render backend URL
+// Updated for Render deployment
+const API_BASE_URL = 'https://edudrivehub-backend-r9p2.onrender.com';
 let adminAuth = null;
 
 // Initialize admin panel
