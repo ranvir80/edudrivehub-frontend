@@ -37,21 +37,7 @@ function setupEventListeners() {
     // Upload form
     const uploadForm = document.getElementById('uploadForm');
     if (uploadForm) {
-        uploadForm.addEventListener('submit', handleFileUpload);
-    }
-
-    // File input change
-    const fileInput = document.getElementById('pdfFile');
-    if (fileInput) {
-        fileInput.addEventListener('change', handleFileSelect);
-    }
-
-    // Drag and drop
-    const uploadArea = document.getElementById('uploadArea');
-    if (uploadArea) {
-        uploadArea.addEventListener('dragover', handleDragOver);
-        uploadArea.addEventListener('dragleave', handleDragLeave);
-        uploadArea.addEventListener('drop', handleDrop);
+        uploadForm.addEventListener('submit', handleChapterUpload);
     }
 }
 
@@ -101,8 +87,8 @@ function displayStats(stats) {
         <div class="stat-card">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-500">Total PDFs</p>
-                    <p class="text-2xl font-bold text-gray-900">${stats.totalPDFs || 0}</p>
+                    <p class="text-sm text-gray-500">Total Chapters</p>
+                    <p class="text-2xl font-bold text-gray-900">${stats.totalChapters || 0}</p>
                 </div>
                 <div class="stat-icon bg-green-100">
                     <i class="fas fa-file-pdf text-green-600"></i>
@@ -110,17 +96,7 @@ function displayStats(stats) {
             </div>
         </div>
         
-        <div class="stat-card">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500">Storage Used</p>
-                    <p class="text-2xl font-bold text-gray-900">${stats.storageUsed || '0 MB'}</p>
-                </div>
-                <div class="stat-icon bg-orange-100">
-                    <i class="fas fa-cloud text-orange-600"></i>
-                </div>
-            </div>
-        </div>
+        
         
         <div class="stat-card">
             <div class="flex items-center justify-between">
@@ -136,98 +112,46 @@ function displayStats(stats) {
     `;
 }
 
-// Handle file selection
-function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-        validateAndDisplayFile(file);
-    }
-}
-
-// Validate and display selected file
-function validateAndDisplayFile(file) {
-    const selectedFileEl = document.getElementById('selectedFile');
-    
-    // Validate file type
-    if (file.type !== 'application/pdf') {
-        showNotification('Only PDF files are allowed', 'error');
-        return false;
-    }
-    
-    // Validate file size (10MB limit)
-    if (file.size > 10 * 1024 * 1024) {
-        showNotification('File size must be less than 10MB', 'error');
-        return false;
-    }
-    
-    // Display selected file
-    selectedFileEl.textContent = `Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-    selectedFileEl.classList.remove('hidden');
-    
-    return true;
-}
-
-// Drag and drop handlers
-function handleDragOver(e) {
-    e.preventDefault();
-    e.currentTarget.classList.add('dragover');
-}
-
-function handleDragLeave(e) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
-}
-
-function handleDrop(e) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('dragover');
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        const file = files[0];
-        if (validateAndDisplayFile(file)) {
-            document.getElementById('pdfFile').files = files;
-        }
-    }
-}
-
-// Handle file upload
-async function handleFileUpload(e) {
+// Handle chapter upload via Google Drive link
+async function handleChapterUpload(e) {
     e.preventDefault();
     
     const form = e.target;
-    const formData = new FormData();
     
     // Get form values
     const subjectCode = document.getElementById('subjectCode').value;
     const title = document.getElementById('title').value;
     const description = document.getElementById('description').value;
     const chapterNumber = document.getElementById('chapterNumber').value;
-    const file = document.getElementById('pdfFile').files[0];
+    const driveLink = document.getElementById('driveLink').value;
     
     // Validate required fields
-    if (!subjectCode || !title || !chapterNumber || !file) {
+    if (!subjectCode || !title || !chapterNumber || !driveLink) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
     
-    // Append form data
-    formData.append('file', file);
-    formData.append('subjectCode', subjectCode);
-    formData.append('title', title);
-    formData.append('description', description);
-    formData.append('chapterNumber', chapterNumber);
+    // Validate Google Drive link format
+    if (!driveLink.includes('drive.google.com') && !driveLink.includes('docs.google.com')) {
+        showNotification('Please provide a valid Google Drive link', 'error');
+        return;
+    }
     
     const uploadBtn = document.getElementById('uploadBtn');
     setButtonLoading(uploadBtn, true);
     
     try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/upload`, {
+        const response = await fetch(`${API_BASE_URL}/api/admin/upload-chapter`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${adminAuth?.token || ''}`
+                'Authorization': `Bearer ${adminAuth?.token || ''}`,
+                'Content-Type': 'application/json'
             },
-            body: formData
+            body: JSON.stringify({
+                subject: subjectCode,
+                chapterTitle: title,
+                driveLink: driveLink
+            })
         });
         
         const data = await response.json();
@@ -240,7 +164,6 @@ async function handleFileUpload(e) {
         
         // Reset form
         form.reset();
-        document.getElementById('selectedFile').classList.add('hidden');
         
         // Reload stats and recent uploads
         loadStats();
@@ -298,8 +221,8 @@ function displayRecentUploads(uploads) {
                 </div>
                 <div>
                     <h4 class="font-semibold text-gray-900">${upload.title}</h4>
-                    <p class="text-sm text-gray-500">${upload.subjectName} - Chapter ${upload.chapterNumber}</p>
-                    <p class="text-xs text-gray-400">${formatFileSize(upload.fileSize)} • ${formatDate(upload.createdAt)}</p>
+                    <p class="text-sm text-gray-500">${upload.subject}</p>
+                    <p class="text-xs text-gray-400">${formatDate(upload.uploadedAt)}</p>
                 </div>
             </div>
             <div class="chapter-actions">
