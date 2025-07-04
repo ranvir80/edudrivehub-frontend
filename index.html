@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduDriveHub - Study Material Vault</title>
     <meta name="description" content="Access organized PDFs chapter-wise for your courses. Secure storage with premium and free subject access.">
-    
+
     <!-- Open Graph -->
     <meta property="og:title" content="EduDriveHub - Study Material Vault">
     <meta property="og:description" content="Access organized PDFs chapter-wise for your courses">
     <meta property="og:type" content="website">
-    
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -34,9 +34,10 @@
                     </nav>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button onclick="openAdminModal()" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+                    <!-- Admin login temporarily hidden -->
+                    <!-- <button onclick="openAdminModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium">
                         <i class="fas fa-user-shield mr-2"></i>Admin Login
-                    </button>
+                    </button> -->
                 </div>
             </div>
         </div>
@@ -91,7 +92,7 @@
                 <h3 class="text-2xl font-bold text-gray-900 mb-2">Admin Login</h3>
                 <p class="text-gray-600">Access the admin panel to manage study materials</p>
             </div>
-            
+
             <form id="adminLoginForm" class="space-y-6">
                 <div>
                     <label class="block text-sm font-medium text-gray-700">Email Address</label>
@@ -124,7 +125,7 @@
                 <h3 class="text-2xl font-bold text-gray-900 mb-2">Premium Access Required</h3>
                 <p class="text-gray-600">Enter the subject password to access KLiC Hardware materials</p>
             </div>
-            
+
             <form id="premiumAccessForm" class="space-y-6">
                 <input type="hidden" id="premiumSubjectCode">
                 <div>
@@ -179,6 +180,7 @@
         </div>
     </footer>
 
+    <script src="dev-config.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

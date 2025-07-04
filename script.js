@@ -253,7 +253,12 @@ async function handlePremiumAccess(e) {
         showNotification('Access granted! Redirecting...', 'success');
         
         setTimeout(() => {
-            window.location.href = `subject.html?code=${subjectCode}`;
+            // Redirect KLiC Hardware to Google Drive folder
+            if (subjectCode === 'klic') {
+                window.location.href = 'https://drive.google.com/drive/folders/1xU3dnrpBtOAP_SyzZ5tjUPxSraq3R56u?usp=drive_link';
+            } else {
+                window.location.href = `subject.html?code=${subjectCode}`;
+            }
         }, 1500);
         
     } catch (error) {
