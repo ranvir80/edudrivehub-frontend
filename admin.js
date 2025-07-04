@@ -143,6 +143,13 @@ async function handleChapterUpload(e) {
         return;
     }
     
+    // Check if admin token exists
+    if (!adminAuth || !adminAuth.token) {
+        showNotification('Authentication token missing. Please login again.', 'error');
+        logout();
+        return;
+    }
+    
     const uploadBtn = document.getElementById('uploadBtn');
     setButtonLoading(uploadBtn, true);
     
@@ -156,14 +163,23 @@ async function handleChapterUpload(e) {
             body: JSON.stringify({
                 subject: subjectCode,
                 chapterTitle: title,
-                driveLink: driveLink
+                driveLink: driveLink,
+                description: description,
+                chapterNumber: parseInt(chapterNumber)
             })
         });
         
-        const data = await response.json();
+        let data;
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            console.error('Error parsing response:', parseError);
+            throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        }
         
         if (!response.ok) {
-            throw new Error(data.message || 'Upload failed');
+            console.error('Upload failed:', data);
+            throw new Error(data.message || `Upload failed: ${response.status} ${response.statusText}`);
         }
         
         showNotification('Chapter uploaded successfully!', 'success');
