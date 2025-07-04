@@ -242,21 +242,50 @@ async function handlePremiumAccess(e) {
         });
         
         const data = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(data.message || 'Invalid password');
         }
-        
+
         // Store premium access
         localStorage.setItem(`premiumAccess_${subjectCode}`, 'true');
-        
+
         showNotification('Access granted! Redirecting...', 'success');
-        
-        setTimeout(() => {
-            // Redirect KLiC Hardware to Google Drive folder
-            if (subjectCode === 'klic') {
-                window.location.href = 'https://drive.google.com/drive/folders/1xU3dnrpBtOAP_SyzZ5tjUPxSraq3R56u?usp=drive_link';
+
+        setTimeout(async () => {
+            // For subjects with direct drive links, get secure link from backend
+            if (data.hasDirectLink && data.accessToken) {
+                try {
+                    const driveResponse = await fetch(`${API_BASE_URL}/api/subjects/get-drive-link`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            subjectCode: subjectCode,
+                            accessToken: data.accessToken
+                        }),
+                    });
+
+                    const driveData = await driveResponse.json();
+
+                    if (driveResponse.ok && driveData.driveLink) {
+                        // Store temporary access token for this session
+                        sessionStorage.setItem(`driveAccess_${subjectCode}`, data.accessToken);
+
+                        // Redirect to secure drive link
+                        window.location.href = driveData.driveLink;
+                    } else {
+                        throw new Error('Failed to get secure drive link');
+                    }
+                } catch (error) {
+                    console.error('Error getting drive link:', error);
+                    showNotification('Error accessing drive link. Please try again.', 'error');
+                    // Fallback to subject page
+                    window.location.href = `subject.html?code=${subjectCode}`;
+                }
             } else {
+                // Regular subject access
                 window.location.href = `subject.html?code=${subjectCode}`;
             }
         }, 1500);
