@@ -1,186 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduDriveHub - Study Material Vault</title>
-    <meta name="description" content="Access organized PDFs chapter-wise for your courses. Secure storage with premium and free subject access.">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduDriveHub Moved</title>
+  <meta http-equiv="refresh" content="5;url=https://edudrivehub-ranvir.vercel.app" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+    }
 
-    <!-- Open Graph -->
-    <meta property="og:title" content="EduDriveHub - Study Material Vault">
-    <meta property="og:description" content="Access organized PDFs chapter-wise for your courses">
-    <meta property="og:type" content="website">
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    p {
+      font-size: 1.1rem;
+    }
+
+    .spinner {
+      margin-top: 30px;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #fff;
+      border-top: 4px solid transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    a {
+      color: #ffd;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+  </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <header class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-blue-600">
-                        <i class="fas fa-graduation-cap mr-2"></i>
-                        EduDriveHub
-                    </h1>
-                    <nav class="hidden md:ml-8 md:flex md:space-x-8">
-                        <a href="#subjects" class="text-gray-900 hover:text-blue-600 px-3 py-2 text-sm font-medium">Subjects</a>
-                        <a href="#about" class="text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">About</a>
-                        <a href="#contact" class="text-gray-500 hover:text-blue-600 px-3 py-2 text-sm font-medium">Contact</a>
-                    </nav>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <!-- Admin login temporarily hidden -->
-                    <!-- <button onclick="openAdminModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium">
-                        <i class="fas fa-user-shield mr-2"></i>Admin Login
-                    </button> -->
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-br from-blue-600 to-blue-800 text-white py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 class="text-4xl md:text-5xl font-bold mb-6">Your Study Material Vault</h2>
-            <p class="text-xl md:text-2xl mb-8 opacity-90">Access organized PDFs chapter-wise for your courses</p>
-            <div class="flex flex-wrap justify-center gap-4">
-                <div class="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-                    <span class="text-sm font-medium">Secure Storage</span>
-                </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-                    <span class="text-sm font-medium">Chapter-wise Organization</span>
-                </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-lg px-6 py-3">
-                    <span class="text-sm font-medium">Premium & Free Access</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Subjects Section -->
-    <section id="subjects" class="py-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12">
-                <h3 class="text-3xl font-bold text-gray-900 mb-4">Available Subjects</h3>
-                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                    Choose from our collection of study materials. Some subjects are free, while others require premium access.
-                </p>
-            </div>
-
-            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto" id="subjects-grid">
-                <!-- Subjects will be loaded here -->
-                <div class="loading-spinner text-center col-span-2">
-                    <i class="fas fa-spinner fa-spin text-3xl text-blue-600"></i>
-                    <p class="mt-4 text-gray-600">Loading subjects...</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Admin Login Modal -->
-    <div id="adminModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div class="text-center mb-6">
-                <div class="bg-blue-100 rounded-full p-4 w-20 h-20 mx-auto mb-4">
-                    <i class="fas fa-shield-alt text-blue-600 text-3xl"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Admin Login</h3>
-                <p class="text-gray-600">Access the admin panel to manage study materials</p>
-            </div>
-
-            <form id="adminLoginForm" class="space-y-6">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Email Address</label>
-                    <input type="email" id="adminEmail" placeholder="admin@edudrivehub32" required 
-                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Password</label>
-                    <input type="password" id="adminPassword" placeholder="Enter your password" required 
-                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" onclick="closeAdminModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                    <button type="submit" id="adminLoginBtn" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
-                        <span class="login-text">Login</span>
-                        <span class="login-spinner hidden"><i class="fas fa-spinner fa-spin"></i> Logging in...</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Premium Access Modal -->
-    <div id="premiumModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
-            <div class="text-center mb-6">
-                <div class="bg-orange-100 rounded-full p-4 w-20 h-20 mx-auto mb-4">
-                    <i class="fas fa-crown text-orange-600 text-3xl"></i>
-                </div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Premium Access Required</h3>
-                <p class="text-gray-600">Enter the subject password to access KLiC Hardware materials</p>
-            </div>
-
-            <form id="premiumAccessForm" class="space-y-6">
-                <input type="hidden" id="premiumSubjectCode">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Subject Password</label>
-                    <input type="password" id="premiumPassword" placeholder="Enter premium access password" required 
-                           class="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-orange-500 focus:border-orange-500">
-                    <p class="text-sm text-gray-500 mt-2">Contact administrator for premium access credentials</p>
-                </div>
-                <div class="flex justify-between">
-                    <button type="button" onclick="closePremiumModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Cancel</button>
-                    <button type="submit" id="premiumAccessBtn" class="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700">
-                        <span class="access-text">Access</span>
-                        <span class="access-spinner hidden"><i class="fas fa-spinner fa-spin"></i> Verifying...</span>
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-12">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid md:grid-cols-4 gap-8">
-                <div class="col-span-2">
-                    <h5 class="text-2xl font-bold mb-4">
-                        <i class="fas fa-graduation-cap mr-2"></i>EduDriveHub
-                    </h5>
-                    <p class="text-gray-400 mb-6 max-w-md">
-                        Your secure study material vault. Access organized PDFs chapter-wise with premium and free subject options.
-                    </p>
-                </div>
-                <div>
-                    <h6 class="font-semibold mb-4">Quick Links</h6>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#subjects" class="hover:text-white transition-colors">Subjects</a></li>
-                        <li><a href="#about" class="hover:text-white transition-colors">About</a></li>
-                        <li><a href="#contact" class="hover:text-white transition-colors">Contact</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h6 class="font-semibold mb-4">Support</h6>
-                    <ul class="space-y-2 text-gray-400">
-                        <li><a href="#help" class="hover:text-white transition-colors">Help Center</a></li>
-                        <li><a href="#faq" class="hover:text-white transition-colors">FAQ</a></li>
-                        <li><a href="#technical" class="hover:text-white transition-colors">Technical Support</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-                <p>&copy; 2024 EduDriveHub. All rights reserved. Built with security and education in mind.</p>
-            </div>
-        </div>
-    </footer>
-
-    <script src="dev-config.js"></script>
-    <script src="script.js"></script>
+<body>
+  <h1>🎉 EduDriveHub Has Moved!</h1>
+  <p>You will be redirected in 5 seconds to our new and improved site:</p>
+  <p><a href="https://edudrivehub-ranvir.vercel.app">https://edudrivehub-ranvir.vercel.app</a></p>
+  <div class="spinner"></div>
 </body>
 </html>
